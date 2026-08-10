@@ -383,6 +383,32 @@ function formatCOP(n){
   return "$" + n.toLocaleString("es-CO");
 }
 
+const STORAGE_KEY = "plan_pago_celular_estado";
+
+function guardarEstado(){
+  try{
+    const estado = weeks.map(w => w.paid);
+    const fecha = document.getElementById("fechaActualizacion").textContent;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({estado, fecha}));
+  }catch(e){
+    console.error("No se pudo guardar el estado:", e);
+  }
+}
+
+function cargarEstado(){
+  try{
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    if(!guardado) return;
+    const {estado, fecha} = JSON.parse(guardado);
+    estado.forEach((paid, i) => {
+      if(weeks[i]) weeks[i].paid = paid;
+    });
+    if(fecha) document.getElementById("fechaActualizacion").textContent = fecha;
+  }catch(e){
+    console.error("No se pudo cargar el estado guardado:", e);
+  }
+}
+
 function render(){
   const container = document.getElementById("weeksContainer");
   container.innerHTML = "";
@@ -407,6 +433,7 @@ function render(){
       updateDocTitle();
       updateConteo();
       updateFecha();
+      guardarEstado();
       render();
     });
     container.appendChild(card);
@@ -458,6 +485,7 @@ function updateSummary(){
   document.getElementById("saldoPct").textContent = "(" + pctFalta + "%)";
 }
 
+cargarEstado();
 updateSummary();
 updateDocTitle();
 updateConteo();
