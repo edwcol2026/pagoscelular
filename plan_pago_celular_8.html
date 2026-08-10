@@ -153,6 +153,19 @@
     color:#5a6b62;
   }
   .conteo-line strong{ color: var(--ink); }
+  .tiempo-line{
+    margin-top:2px;
+    padding-top:0;
+    border-top:none;
+    justify-content:flex-start;
+    gap:6px;
+    font-size:11px;
+    color:#a8b3ac;
+  }
+  .tiempo-line strong{
+    color:#a8b3ac;
+    font-weight:600;
+  }
 
   .weeks{
     padding: 10px 16px 0;
@@ -330,6 +343,9 @@
     <span>Pagos realizados: <strong id="pagosRealizados">3 de 12</strong></span>
     <span>Pendientes: <strong id="pagosPendientes">9</strong> <span class="saldo-pct" id="pendienteDetalle">(9 sem · ~2 meses)</span></span>
   </div>
+  <div class="conteo-line tiempo-line">
+    <span>Tiempo pagado: <strong id="tiempoPagado">3 semanas</strong> <span class="saldo-pct" id="tiempoPagadoMeses">(~1 mes)</span></span>
+  </div>
 </div>
 
 <div class="hint">Toca una semana para marcarla como pagada o pendiente</div>
@@ -416,11 +432,16 @@ function updateConteo(){
   const realizados = weeks.filter(w => w.paid).length;
   const pendientes = total - realizados;
   const meses = Math.round((pendientes / 4.33) * 10) / 10;
+  const mesesPagados = Math.round((realizados / 4.33) * 10) / 10;
 
   document.getElementById("pagosRealizados").textContent = `${realizados} de ${total}`;
   document.getElementById("pagosPendientes").textContent = pendientes;
   document.getElementById("pendienteDetalle").textContent =
     pendientes === 0 ? "(¡completado!)" : `(${pendientes} sem · ~${meses} ${meses === 1 ? 'mes' : 'meses'})`;
+  document.getElementById("tiempoPagado").textContent =
+    `${realizados} ${realizados === 1 ? 'semana' : 'semanas'}`;
+  document.getElementById("tiempoPagadoMeses").textContent =
+    realizados === 0 ? "" : `(~${mesesPagados} ${mesesPagados === 1 ? 'mes' : 'meses'})`;
 }
 
 function updateSummary(){
