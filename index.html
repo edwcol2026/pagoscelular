@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Pago Celular</title>
+<style>
+  :root{
+    --dark: #2a4238;
+    --dark-2: #3c5a4e;
+    --gold: #d4af6e;
+    --cream: #f4f1ea;
+    --ink: #26332c;
+    --paid: #4c7a5e;
+    --pending: #a8763f;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{ background: #e2ddd0; }
+  body{
+    font-family: 'Georgia', 'Times New Roman', serif;
+    background: var(--cream);
+    color: var(--ink);
+    padding: 0 0 40px 0;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 520px;
+    margin: 0 auto;
+    min-height: 100vh;
+    box-shadow: 0 0 40px rgba(0,0,0,0.08);
+  }
+  .sans{ font-family: 'Helvetica Neue', Arial, sans-serif; }
+
+  header{
+    background: linear-gradient(135deg, var(--dark) 0%, #1d332b 100%);
+    color: var(--cream);
+    padding: 36px 24px 30px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before{
+    content:"";
+    position:absolute;
+    top:-60px; right:-60px;
+    width:200px; height:200px;
+    border:1px solid rgba(212,175,110,0.25);
+    border-radius:50%;
+  }
+  header::after{
+    content:"";
+    position:absolute;
+    bottom:-80px; right:20px;
+    width:140px; height:140px;
+    border:1px solid rgba(212,175,110,0.15);
+    border-radius:50%;
+  }
+  .eyebrow{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:11px;
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color: var(--gold);
+    margin-bottom:8px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:400;
+    letter-spacing:0.5px;
+    margin-bottom:4px;
+  }
+  .subtitle{
+    font-size:13px;
+    color: rgba(244,241,234,0.7);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+  }
+
+  .summary{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap:1px;
+    background: rgba(212,175,110,0.25);
+    margin: 22px -24px -30px -24px;
+    position:relative;
+    z-index:1;
+  }
+  .summary-item{
+    background: var(--dark);
+    padding: 16px 12px;
+    text-align:center;
+  }
+  .summary-item .val{
+    font-size:18px;
+    font-weight:600;
+    color: var(--cream);
+  }
+  .summary-item .lbl{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:9.5px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color: var(--gold);
+    margin-top:4px;
+  }
+
+  .progress-wrap{
+    padding: 46px 24px 20px;
+  }
+  .progress-labels{
+    display:flex;
+    justify-content:space-between;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12px;
+    margin-bottom:8px;
+    color: var(--dark);
+  }
+  .progress-labels .pct{
+    font-weight:700;
+    color: var(--paid);
+  }
+  .progress-bar{
+    height:10px;
+    background: #e2ddd0;
+    border-radius:6px;
+    overflow:hidden;
+    border:1px solid rgba(42,66,56,0.15);
+  }
+  .progress-fill{
+    height:100%;
+    background: linear-gradient(90deg, var(--paid), #6ba084);
+    border-radius:6px;
+    transition: width 0.5s ease;
+  }
+  .saldo-line{
+    display:flex;
+    justify-content:space-between;
+    margin-top:10px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12.5px;
+    color:#5a6b62;
+  }
+  .saldo-line strong{ color: var(--ink); }
+  .saldo-pct{
+    color: #9aa79f;
+    font-size:11px;
+    font-weight:400;
+  }
+  .conteo-line{
+    display:flex;
+    justify-content:space-between;
+    margin-top:8px;
+    padding-top:8px;
+    border-top: 1px dashed rgba(42,66,56,0.15);
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:12px;
+    color:#5a6b62;
+  }
+  .conteo-line strong{ color: var(--ink); }
+
+  .weeks{
+    padding: 10px 16px 0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .week-card{
+    background:#fff;
+    border:1px solid rgba(42,66,56,0.12);
+    border-left: 5px solid var(--pending);
+    border-radius:8px;
+    padding:14px 16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    transition: all 0.25s ease;
+    user-select:none;
+  }
+  .week-card.paid{
+    border-left-color: var(--paid);
+    background: #fbfaf6;
+  }
+  .week-card:active{ transform: scale(0.985); }
+
+  .week-left{ flex:1; }
+  .week-num{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    color: var(--gold);
+    font-weight:700;
+  }
+  .week-title{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:15px;
+    font-weight:700;
+    margin-top:2px;
+    color: var(--ink);
+  }
+  .week-dates{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:11.5px;
+    color:#7a8880;
+    margin-top:2px;
+  }
+
+  .week-right{
+    text-align:right;
+    padding-left:12px;
+  }
+  .week-abono{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:14px;
+    font-weight:700;
+    color: var(--ink);
+  }
+  .week-saldo{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px;
+    color:#8a9690;
+    margin-top:2px;
+  }
+  .status-pill{
+    display:inline-block;
+    margin-top:6px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:9.5px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-weight:700;
+    padding:3px 9px;
+    border-radius:20px;
+  }
+  .status-pill.pending{
+    background: rgba(168,118,63,0.12);
+    color: var(--pending);
+  }
+  .status-pill.paid-pill{
+    background: rgba(76,122,94,0.13);
+    color: var(--paid);
+  }
+
+  footer{
+    text-align:center;
+    padding: 30px 24px 10px;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px;
+    color:#9aa79f;
+  }
+
+  .hint{
+    text-align:center;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:11px;
+    color:#8a9690;
+    padding: 4px 24px 0;
+    font-style:italic;
+  }
+
+  .pdf-btn-wrap{
+    position: fixed;
+    bottom: 18px;
+    left: max(18px, calc(50% - 260px + 18px));
+    z-index: 10;
+  }
+  .pdf-btn{
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10px;
+    letter-spacing:0.5px;
+    text-transform:uppercase;
+    font-weight:700;
+    color: var(--cream);
+    background: var(--dark);
+    border: 1.5px solid var(--gold);
+    border-radius:50%;
+    width:46px;
+    height:46px;
+    cursor:pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(42,66,56,0.3);
+  }
+  .pdf-btn:hover{
+    background: var(--gold);
+    color: var(--dark);
+  }
+  .pdf-btn:active{ transform: scale(0.94); }
+
+  @media print{
+    .hint, .pdf-btn-wrap{ display:none; }
+    body{ padding:0; }
+    .week-card{ break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Plan de Abono Personal</div>
+  <h1>Plan de Pago · Celular</h1>
+  <div class="subtitle">Calendario de pago semanal</div>
+
+  <div class="summary">
+    <div class="summary-item">
+      <div class="val">$950.000</div>
+      <div class="lbl">Valor Total</div>
+    </div>
+    <div class="summary-item">
+      <div class="val">$80.000</div>
+      <div class="lbl">Abono Semanal</div>
+    </div>
+    <div class="summary-item">
+      <div class="val">~3 meses</div>
+      <div class="lbl">Duración Estimada</div>
+    </div>
+  </div>
+</header>
+
+<div class="progress-wrap">
+  <div class="progress-labels">
+    <span>Progreso de pago</span>
+    <span class="pct" id="pctLabel">25%</span>
+  </div>
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:25%"></div>
+  </div>
+  <div class="saldo-line">
+    <span>Pagado: <strong id="pagadoLabel">$240.000</strong> <span class="saldo-pct" id="pagadoPct">(25%)</span></span>
+    <span>Falta: <strong id="saldoLabel">$710.000</strong> <span class="saldo-pct" id="saldoPct">(75%)</span></span>
+  </div>
+  <div class="conteo-line">
+    <span>Pagos realizados: <strong id="pagosRealizados">3 de 12</strong></span>
+    <span>Pendientes: <strong id="pagosPendientes">9</strong> <span class="saldo-pct" id="pendienteDetalle">(9 sem · ~2 meses)</span></span>
+  </div>
+</div>
+
+<div class="hint">Toca una semana para marcarla como pagada o pendiente</div>
+
+<div class="weeks" id="weeksContainer"></div>
+
+<footer>
+  Documento generado electrónicamente para seguimiento personal de abonos<br>
+  Última actualización: <span id="fechaActualizacion">30 de julio de 2026</span>
+</footer>
+
+<div class="pdf-btn-wrap">
+  <button class="pdf-btn" onclick="window.print()">PDF</button>
+</div>
+
+<script>
+const totalPlan = 950000;
+
+const weeks = [
+  {n:1, semana:"Semana 29 del año", fecha:"Lunes 13 – Domingo 19 de julio de 2026", abono:80000, saldo:870000, paid:true},
+  {n:2, semana:"Semana 30 del año", fecha:"Lunes 20 – Domingo 26 de julio de 2026", abono:80000, saldo:790000, paid:true},
+  {n:3, semana:"Semana 31 del año", fecha:"Lunes 27 de julio – Domingo 2 de agosto de 2026", abono:80000, saldo:710000, paid:true},
+  {n:4, semana:"Semana 32 del año", fecha:"Lunes 3 – Domingo 9 de agosto de 2026", abono:80000, saldo:630000, paid:false},
+  {n:5, semana:"Semana 33 del año", fecha:"Lunes 10 – Domingo 16 de agosto de 2026", abono:80000, saldo:550000, paid:false},
+  {n:6, semana:"Semana 34 del año", fecha:"Lunes 17 – Domingo 23 de agosto de 2026", abono:80000, saldo:470000, paid:false},
+  {n:7, semana:"Semana 35 del año", fecha:"Lunes 24 – Domingo 30 de agosto de 2026", abono:80000, saldo:390000, paid:false},
+  {n:8, semana:"Semana 36 del año", fecha:"Lunes 31 de agosto – Domingo 6 de septiembre de 2026", abono:80000, saldo:310000, paid:false},
+  {n:9, semana:"Semana 37 del año", fecha:"Lunes 7 – Domingo 13 de septiembre de 2026", abono:80000, saldo:230000, paid:false},
+  {n:10, semana:"Semana 38 del año", fecha:"Lunes 14 – Domingo 20 de septiembre de 2026", abono:80000, saldo:150000, paid:false},
+  {n:11, semana:"Semana 39 del año", fecha:"Lunes 21 – Domingo 27 de septiembre de 2026", abono:80000, saldo:70000, paid:false},
+  {n:12, semana:"Semana 40 del año", fecha:"Lunes 28 de septiembre – Domingo 4 de octubre de 2026", abono:70000, saldo:0, paid:false},
+];
+
+function formatCOP(n){
+  return "$" + n.toLocaleString("es-CO");
+}
+
+function render(){
+  const container = document.getElementById("weeksContainer");
+  container.innerHTML = "";
+
+  weeks.forEach(w => {
+    const card = document.createElement("div");
+    card.className = "week-card" + (w.paid ? " paid" : "");
+    card.innerHTML = `
+      <div class="week-left">
+        <div class="week-num">Pago N.º ${w.n} · ${w.semana}</div>
+        <div class="week-dates">${w.fecha}</div>
+      </div>
+      <div class="week-right">
+        <div class="week-abono">${formatCOP(w.abono)}</div>
+        <div class="week-saldo">Saldo: ${formatCOP(w.saldo)}</div>
+        <div class="status-pill ${w.paid ? 'paid-pill' : 'pending'}">${w.paid ? '✓ Pagado' : 'Pendiente'}</div>
+      </div>
+    `;
+    card.addEventListener("click", () => {
+      w.paid = !w.paid;
+      updateSummary();
+      updateDocTitle();
+      updateConteo();
+      updateFecha();
+      render();
+    });
+    container.appendChild(card);
+  });
+}
+
+function updateDocTitle(){
+  // Busca el próximo pago pendiente; si todos están pagados, usa el último
+  const proximo = weeks.find(w => !w.paid) || weeks[weeks.length - 1];
+  const semanaNum = proximo.semana.match(/\d+/)[0];
+  document.title = `Pago N${proximo.n} - Semana ${semanaNum} del año`;
+}
+
+function updateFecha(){
+  const hoy = new Date();
+  const meses = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const texto = `${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
+  document.getElementById("fechaActualizacion").textContent = texto;
+}
+
+function updateConteo(){
+  const total = weeks.length;
+  const realizados = weeks.filter(w => w.paid).length;
+  const pendientes = total - realizados;
+  const meses = Math.round((pendientes / 4.33) * 10) / 10;
+
+  document.getElementById("pagosRealizados").textContent = `${realizados} de ${total}`;
+  document.getElementById("pagosPendientes").textContent = pendientes;
+  document.getElementById("pendienteDetalle").textContent =
+    pendientes === 0 ? "(¡completado!)" : `(${pendientes} sem · ~${meses} ${meses === 1 ? 'mes' : 'meses'})`;
+}
+
+function updateSummary(){
+  const pagado = weeks.filter(w => w.paid).reduce((sum, w) => sum + w.abono, 0);
+  const saldo = totalPlan - pagado;
+  const pct = Math.round((pagado / totalPlan) * 100);
+  const pctFalta = 100 - pct;
+
+  document.getElementById("pagadoLabel").textContent = formatCOP(pagado);
+  document.getElementById("saldoLabel").textContent = formatCOP(saldo);
+  document.getElementById("pctLabel").textContent = pct + "%";
+  document.getElementById("progressFill").style.width = pct + "%";
+  document.getElementById("pagadoPct").textContent = "(" + pct + "%)";
+  document.getElementById("saldoPct").textContent = "(" + pctFalta + "%)";
+}
+
+updateSummary();
+updateDocTitle();
+updateConteo();
+render();
+</script>
+
+</body>
+</html>
