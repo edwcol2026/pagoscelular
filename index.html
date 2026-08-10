@@ -269,6 +269,15 @@
     font-style:italic;
   }
 
+  .status{
+    text-align:center;
+    font-family:'Helvetica Neue', Arial, sans-serif;
+    font-size:10.5px;
+    color:#8a9690;
+    min-height:14px;
+    padding-top:4px;
+  }
+
   .pdf-btn-wrap{
     position: fixed;
     bottom: 18px;
@@ -356,6 +365,7 @@
   Documento generado electrónicamente para seguimiento personal de abonos<br>
   Última actualización: <span id="fechaActualizacion">30 de julio de 2026</span>
 </footer>
+<div class="status" id="status"></div>
 
 <div class="pdf-btn-wrap">
   <button class="pdf-btn" onclick="window.print()">PDF</button>
@@ -385,21 +395,48 @@ function formatCOP(n){
 
 const STORAGE_KEY = "plan_pago_celular_estado";
 
-function guardarEstado(){
+// Funciona tanto dentro de Claude (window.storage) como en un hosting normal
+// (usa localStorage del navegador como respaldo). Así el mismo código sirve
+// aquí en el chat y ya publicado en Netlify, sin tener que cambiar nada.
+const storageAdapter = {
+  async get(key){
+    if(window.storage){
+      try{ return await window.storage.get(key, false); }
+      catch(e){ return null; }
+    }
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? {key, value: raw} : null;
+    }catch(e){ return null; }
+  },
+  async set(key, value){
+    if(window.storage){
+      try{ return await window.storage.set(key, value, false); }
+      catch(e){ return null; }
+    }
+    try{
+      localStorage.setItem(key, value);
+      return {key, value};
+    }catch(e){ return null; }
+  }
+};
+
+async function guardarEstado(){
   try{
     const estado = weeks.map(w => w.paid);
     const fecha = document.getElementById("fechaActualizacion").textContent;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({estado, fecha}));
+    const result = await storageAdapter.set(STORAGE_KEY, JSON.stringify({estado, fecha}));
+    setStatus(result ? 'Guardado ✓' : 'No se pudo guardar', !result);
   }catch(e){
-    console.error("No se pudo guardar el estado:", e);
+    setStatus('No se pudo guardar', true);
   }
 }
 
-function cargarEstado(){
+async function cargarEstado(){
   try{
-    const guardado = localStorage.getItem(STORAGE_KEY);
-    if(!guardado) return;
-    const {estado, fecha} = JSON.parse(guardado);
+    const guardado = await storageAdapter.get(STORAGE_KEY);
+    if(!guardado || !guardado.value) return;
+    const {estado, fecha} = JSON.parse(guardado.value);
     estado.forEach((paid, i) => {
       if(weeks[i]) weeks[i].paid = paid;
     });
@@ -407,6 +444,14 @@ function cargarEstado(){
   }catch(e){
     console.error("No se pudo cargar el estado guardado:", e);
   }
+}
+
+function setStatus(msg, isError){
+  const el = document.getElementById('status');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? '#b84a3e' : '#8a9690';
+  if(msg) setTimeout(()=>{ if(el.textContent===msg) el.textContent=''; }, 2200);
 }
 
 function render(){
@@ -427,13 +472,13 @@ function render(){
         <div class="status-pill ${w.paid ? 'paid-pill' : 'pending'}">${w.paid ? '✓ Pagado' : 'Pendiente'}</div>
       </div>
     `;
-    card.addEventListener("click", () => {
+    card.addEventListener("click", async () => {
       w.paid = !w.paid;
       updateSummary();
       updateDocTitle();
       updateConteo();
       updateFecha();
-      guardarEstado();
+      await guardarEstado();
       render();
     });
     container.appendChild(card);
@@ -485,11 +530,13 @@ function updateSummary(){
   document.getElementById("saldoPct").textContent = "(" + pctFalta + "%)";
 }
 
-cargarEstado();
-updateSummary();
-updateDocTitle();
-updateConteo();
-render();
+(async function init(){
+  await cargarEstado();
+  updateSummary();
+  updateDocTitle();
+  updateConteo();
+  render();
+})();
 </script>
 
 </body>
